@@ -10,7 +10,7 @@
 #ifdef __LINUX__
 #include <sys/epoll.h>
 
-#endif __LINUX__
+#endif
 
 #include "SCServer.h"
 #include "Procession.h"
