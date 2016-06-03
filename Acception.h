@@ -11,7 +11,7 @@
 #include "Procession.h"
 #include "ParamenterPtr.h"
 
-
+// 套接字 接受类接口
 class Acception {
 protected:
     int sd = 0;
@@ -44,6 +44,8 @@ public:
     virtual void doAccept() = 0;
 };
 
+
+// 多线程 套接字 接受类  默认使用
 class ThreadAcception : public Acception {
 
 public:
