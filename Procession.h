@@ -13,7 +13,7 @@
 
 class Procession {
 public:
-    virtual void doProcess(struct ParamenterPtr *ptr)=0;
+    virtual void doProcess(struct ParamenterPtr *ptr) = 0;
 };
 
 
@@ -24,11 +24,12 @@ public:
     virtual void doProcess(struct ParamenterPtr *ptr) override {
         int conn = *(ptr->conn);
         char buff[512];
-        recv(conn,buff,512,0);
+        bzero(buff, 512);
+        recv(conn, buff, 512, 0);
         printf("接受到数据: %s \n", buff);
         char str[128];
-        sprintf(str,"<<来自服务器测试用例[套接字: %d]的消息>>: 数据已收到! \n",conn);
-        send(conn,str,strlen(str),0);
+        sprintf(str, "<<来自服务器测试用例[套接字: %d]的消息>>: 数据已收到! \n", conn);
+        send(conn, str, strlen(str), 0);
         close(*(ptr->conn));
     }
 };
