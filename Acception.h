@@ -58,7 +58,7 @@ class ThreadAcception : public Acception {
 
 public:
     virtual void doAccept() override {
-
+        printf("使用多线程模式 \n");
         while (1) {
             struct ParamenterPtr *paraPtr = (struct ParamenterPtr*)malloc(sizeof(struct ParamenterPtr));
             bzero(paraPtr, sizeof(struct ParamenterPtr));
@@ -71,16 +71,16 @@ public:
 
 };
 
-//#ifdef __LINUX__
+#ifdef __LINUX__
 
 class EpollAcception : public Acception {
 
 public:
     virtual void doAccept() override {
-        Acception::doProcess(NULL);
+        printf("使用epoll 模式 \n");
     }
 };
 
-//#endif __LINUX__
+#endif
 
 #endif //SOUCHINSERVER_ACCEPTION_H

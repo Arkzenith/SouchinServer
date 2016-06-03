@@ -57,8 +57,13 @@ public:
     }
     void start() {
         if (!acception) {
+#ifdef __LINUX__
+            printf("没有处理接入连接的策略,使用默认的<< Epoll >>策略 \n");
+            acception = new EpollAcception();
+#else
             printf("没有处理接入连接的策略,使用默认的<< 多线程 >>策略 \n");
             acception = new ThreadAcception();
+#endif
         }
         acception->setSd(this->socketd);
         acception->doAccept();
