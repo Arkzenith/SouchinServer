@@ -19,7 +19,7 @@ public:
     virtual void doProcess(struct ParamenterPtr *ptr) override {
         char buff[512];
         recv(*(ptr->conn),buff,512,0);
-        printf("got message: %s", buff);
+        printf("接受到数据: %s", buff);
         close(*(ptr->conn));
     }
 };
