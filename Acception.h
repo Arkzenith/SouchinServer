@@ -7,6 +7,11 @@
 #include <unistd.h>
 #include <thread>
 
+#ifdef __LINUX__
+#include <sys/epoll.h>
+
+#endif __LINUX__
+
 #include "SCServer.h"
 #include "Procession.h"
 #include "ParamenterPtr.h"
@@ -32,12 +37,15 @@ public:
 
 public:
     void doProcess(struct ParamenterPtr *ptr) {
-        if (!procession) {
+//        注意此方法存在内存泄漏, 需要在使用完ptr后释放
+        if (procession == NULL) {
             printf("没事设置连接处理器: Procession, 使用默认设置:MessageProcession\n");
-            procession = new MessageProcessioin();
+            procession = new MessageProcessioin(ptr);
         }
         printf("连接处理器得到套接字描述符: %d \n", *(ptr->conn));
-        procession->doProcess(ptr);
+        procession->doProcess();
+//        必须重置指针!
+        procession = nullptr;
     }
 
 public:
@@ -63,5 +71,16 @@ public:
 
 };
 
+//#ifdef __LINUX__
+
+class EpollAcception : public Acception {
+
+public:
+    virtual void doAccept() override {
+        Acception::doProcess(NULL);
+    }
+};
+
+//#endif __LINUX__
 
 #endif //SOUCHINSERVER_ACCEPTION_H
