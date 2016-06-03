@@ -29,7 +29,7 @@ public:
         recv(conn, buff, 512, 0);
         printf("接受到数据: %s \n", buff);
         char str[128];
-        sprintf(str, "<<来自服务器测试用例[套接字: %d]的消息>>: 数据已收到! \n", conn);
+        sprintf(str, "<<来自服务器测试用例[套接字描述符: %d]的消息>>: 数据已收到! \n", conn);
         send(conn, str, strlen(str), 0);
         close(*(ptr->conn));
     }

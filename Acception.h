@@ -33,10 +33,10 @@ public:
 public:
     void doProcess(struct ParamenterPtr *ptr) {
         if (!procession) {
-            printf("没事设置处理连接: Procession, 使用默认设置:MessageProcession\n");
+            printf("没事设置连接处理器: Procession, 使用默认设置:MessageProcession\n");
             procession = new MessageProcessioin();
         }
-        printf("处理器得到连接套接字: %d \n", *(ptr->conn));
+        printf("连接处理器得到套接字描述符: %d \n", *(ptr->conn));
         procession->doProcess(ptr);
     }
 
