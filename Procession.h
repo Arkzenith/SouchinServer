@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "Acception.h"
 #include "ParamenterPtr.h"
@@ -24,6 +25,7 @@ public:
     virtual void doProcess(struct ParamenterPtr *ptr) override {
         int conn = *(ptr->conn);
         char buff[512];
+            bzero(buff,512);
         recv(conn,buff,512,0);
         printf("接受到数据: %s \n", buff);
         char str[128];

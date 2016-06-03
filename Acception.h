@@ -5,7 +5,7 @@
 #ifndef SOUCHINSERVER_ACCEPTION_H
 #define SOUCHINSERVER_ACCEPTION_H
 #include <unistd.h>
-#include <Thread>
+#include <thread>
 
 #include "SCServer.h"
 #include "Procession.h"
