@@ -1,0 +1,65 @@
+//
+// Created by Ark Zenith on 16/6/3.
+//
+
+#ifndef SOUCHINSERVER_ACCEPTION_H
+#define SOUCHINSERVER_ACCEPTION_H
+#include <unistd.h>
+#include <Thread>
+
+#include "SCServer.h"
+#include "Procession.h"
+#include "ParamenterPtr.h"
+
+
+class Acception {
+protected:
+    int sd = 0;
+    Procession *procession = nullptr;
+
+public:
+    void setSd(int sd) {
+        Acception::sd = sd;
+    }
+
+    void setProcession(Procession *procession) {
+        Acception::procession = procession;
+    }
+
+    Acception(Procession *procession) : procession(procession) { }
+
+    Acception() { }
+
+public:
+    void doProcess(struct ParamenterPtr *ptr) {
+        if (!procession) {
+            printf("没事设置处理连接: Procession, 使用默认设置:MessageProcession\n");
+            procession = new MessageProcessioin();
+        }
+        printf("处理器得到连接套接字: %d \n", *(ptr->conn));
+        procession->doProcess(ptr);
+    }
+
+public:
+    virtual void doAccept() = 0;
+};
+
+class ThreadAcception : public Acception {
+
+public:
+    virtual void doAccept() override {
+
+        while (1) {
+            struct ParamenterPtr *paraPtr = (struct ParamenterPtr*)malloc(sizeof(struct ParamenterPtr));
+            bzero(paraPtr, sizeof(struct ParamenterPtr));
+            int conn = accept(Acception::sd,paraPtr->addr,paraPtr->socklen);
+            paraPtr->conn = (int*) malloc(sizeof(int));
+            *(paraPtr->conn)=conn;
+            std::thread(&Acception::doProcess,this,paraPtr).detach();
+        }
+    }
+
+};
+
+
+#endif //SOUCHINSERVER_ACCEPTION_H
