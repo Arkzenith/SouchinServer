@@ -39,7 +39,7 @@ public:
 
 public:
     void doProcess(struct ParamenterPtr *ptr) {
-//        注意此方法存在内存泄漏, 需要在使用完ptr后释放
+//        注意此方法存在内存泄漏, 需要在使用完ptr后释放 , 内存不再泄漏16/6/4
         if (procession == NULL) {
             printf("没事设置连接处理器: Procession, 使用默认设置:MessageProcession\n");
             procession = new MessageProcessioin(ptr);
