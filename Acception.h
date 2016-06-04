@@ -9,7 +9,7 @@
 
 #ifdef __LINUX__
 #include <sys/epoll.h>
-
+#define MAXENVENTS 1024
 #endif
 
 #include "SCServer.h"
@@ -78,6 +78,44 @@ class EpollAcception : public Acception {
 public:
     virtual void doAccept() override {
         printf("使用epoll 模式 \n");
+        int efd = epoll_create1(0);
+        struct epoll_event ev; events[MAXEVENTS];
+        bzero(&ev,sizeof(struct epoll_event));
+        ev.enents = EPOLLIN|EPOLLET;
+        if (-1==epoll_ctl(efd,EPOLL_CTL_ADD,Acception::sd,&ev)) {
+            printf("EPOLL 发生错误[epoll_ctl],程序退出! socket descriptor %d \n",Acception::sd);
+            exit(EXIT_FAILURE);
+        }
+        while (1) {
+            int nfds = epoll_wait(efd,events,MAXEVENTS,-1);
+            if (-1==nfds) {
+                print("EPOLL 发生错误[epoll_wait],程序退出 !socket descriptor %d \n",Acception::sd);
+                exit(EXIT_FAILURE);
+            }
+            for (int i =0 ;i < nfds;n++) {
+                if (events[i].data.fd==Acception::sd) {
+                    while (1) {
+                        ev.data.fd = accept(Accetioin::sd,NULL,NULL);
+                        if (ev.data.fd > 0) {
+                            fcntl(ev.data.fd,F_SETFL,fcntl(ev.data.fd,F_GETFL,0)|O_NONBLOCK);
+                            ev.events = EPOLLIN|EPOLLET;
+                            epoll_ctl(efd,EPOLL_CTL_ADD,event.data.fd,&ev);
+                        } else {
+                            if (error==EAGAIN) break;
+                        }
+                    }
+                }
+                else {
+                    if (events[i].envents & EPOLLIN) {
+                        char buff[512];
+                        recv(events[i].data.fd,buff,512);
+                        printf("接受到数据: %s \n", buff);
+
+                    }
+                }
+            }
+
+        }
     }
 };
 
