@@ -4,13 +4,16 @@
 
 #ifndef SOUCHINSERVER_ACCEPTION_H
 #define SOUCHINSERVER_ACCEPTION_H
+
 #include <unistd.h>
 #include <thread>
 
 #ifdef __LINUX__
+
 #include <sys/epoll.h>
 #include <sys/fcntl.h>
 #include <error.h>
+
 #define MAXEVENTS 1024
 #endif
 
@@ -62,12 +65,12 @@ public:
     virtual void doAccept() override {
         printf("使用多线程模式 \n");
         while (1) {
-            struct ParamenterPtr *paraPtr = (struct ParamenterPtr*)malloc(sizeof(struct ParamenterPtr));
+            struct ParamenterPtr *paraPtr = (struct ParamenterPtr *) malloc(sizeof(struct ParamenterPtr));
             bzero(paraPtr, sizeof(struct ParamenterPtr));
-            int conn = accept(Acception::sd,paraPtr->addr,paraPtr->socklen);
-            paraPtr->conn = (int*) malloc(sizeof(int));
-            *(paraPtr->conn)=conn;
-            std::thread(&Acception::doProcess,this,paraPtr).detach();
+            int conn = accept(Acception::sd, paraPtr->addr, paraPtr->socklen);
+            paraPtr->conn = (int *) malloc(sizeof(int));
+            *(paraPtr->conn) = conn;
+            std::thread(&Acception::doProcess, this, paraPtr).detach();
         }
     }
 
@@ -81,38 +84,56 @@ public:
     virtual void doAccept() override {
         printf("使用epoll 模式 \n");
         int efd = epoll_create1(0);
-        struct epoll_event ev,events[MAXEVENTS];
-        bzero(&ev,sizeof(struct epoll_event));
-        ev.events = EPOLLIN|EPOLLET;
-        if (-1==epoll_ctl(efd,EPOLL_CTL_ADD,Acception::sd,&ev)) {
-            printf("EPOLL 发生错误[epoll_ctl],程序退出! socket descriptor %d \n",Acception::sd);
+        struct epoll_event ev, events[MAXEVENTS];
+        bzero(&ev, sizeof(struct epoll_event));
+        ev.events = EPOLLIN | EPOLLET;
+        if (-1 == epoll_ctl(efd, EPOLL_CTL_ADD, Acception::sd, &ev)) {
+            printf("EPOLL 发生错误[epoll_ctl],程序退出! socket descriptor %d \n", Acception::sd);
             exit(EXIT_FAILURE);
         }
         while (1) {
-            int nfds = epoll_wait(efd,events,MAXEVENTS,-1);
-            if (-1==nfds) {
-                printf("EPOLL 发生错误[epoll_wait],程序退出 !socket descriptor %d \n",Acception::sd);
+            int nfds = epoll_wait(efd, events, MAXEVENTS, -1);
+            if (-1 == nfds) {
+                printf("EPOLL 发生错误[epoll_wait],程序退出 !socket descriptor %d \n", Acception::sd);
                 exit(EXIT_FAILURE);
             }
-            for (int i =0 ;i < nfds;i++) {
-                if (events[i].data.fd==Acception::sd) {
+            for (int i = 0; i < nfds; i++) {
+                if (events[i].data.fd == Acception::sd) {
                     while (1) {
-                        ev.data.fd = accept(Acception::sd,NULL,NULL);
+                        ev.data.fd = accept(Acception::sd, NULL, NULL);
                         if (ev.data.fd > 0) {
                             fcntl(ev.data.fd,F_SETFL,fcntl(ev.data.fd,F_GETFL,0)|O_NONBLOCK);
-                            ev.events = EPOLLIN|EPOLLET;
-                            epoll_ctl(efd,EPOLL_CTL_ADD,ev.data.fd,&ev);
+                            ev.events = EPOLLIN | EPOLLET;
+                            epoll_ctl(efd, EPOLL_CTL_ADD, ev.data.fd, &ev);
                         } else {
-                            if (error==EAGAIN) break;
+                            if (errno == EAGAIN) break;
                         }
                     }
                 }
                 else {
                     if (events[i].events & EPOLLIN) {
-                        char buff[512];
-                        recv(events[i].data.fd,buff,512,0);
-                        printf("接受到数据: %s \n", buff);
+                        char buff[1024] = {0};
+                        int ret = 999, rs = 1;
+                        while (rs) {
+                            ret = recv(events[i].data.fd, buff, 1024, 0);
+                            if (ret < 0) {
+                                if (errno == EAGAIN) break;
+                                else {
+                                    epoll_ctl(efd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                                    close(events[i].data.fd);
+                                    break;
+                                }
+                            } else if (ret == 0) {
+                                rs = 0;
+                            }
+                            if (ret == sizeof(buff)) {
+                                rs = 1;
+                            } else {
+                                rs = 0;
+                            }
 
+                            printf("接受到数据: %s \n", buff);
+                        }
                     }
                 }
             }
