@@ -3,7 +3,7 @@ project(SouchinServer)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
-if (__SYSTEM__ STREQUAL LINUX)
+if (LINUX)
     add_definitions(-D__LINUX__)
 endif ()
 
