@@ -50,6 +50,7 @@ public:
         serverAddress.sin_addr.s_addr = htonl(0);
         if (-1 ==(bind(socketd,(struct sockaddr*)&serverAddress, sizeof(struct sockaddr)))) {
             printf("端口 : %d 已经被占用, \n",this->port);
+            exit(-1);
         } else{
             printf("服务器设置的监听端口是: %d \n",this->port);
         }

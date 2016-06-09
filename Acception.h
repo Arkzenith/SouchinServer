@@ -18,6 +18,7 @@
 #define MAXEVENTS 1024
 
 #elif __UNIX__
+
 #include <sys/event.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -89,42 +90,62 @@ public:
 
 class KqueueAcception : public Acception {
 
+private:
+    int kq;
+
+public:
+    KqueueAcception() : Acception() {
+        printf("启动 Kqueue 模式 \n");
+        this->kq = kqueue();
+        printf("kqueue 描述符: %d \n", this->kq);
+
+    }
+
 public:
     virtual void doAccept() override {
-        printf("启动 Kqueue 模式 \n");
+        if (0 != this->addEvent(Acception::sd, EVFILT_READ)) {
+            printf("kevent error!\n ");
+        }
+        waitEvent();
+    }
 
-        int kq = kqueue();
+private:
+    int addEvent(int socketd, int actions) {
+        struct kevent ev[1];
+        EV_SET(&ev[0], socketd, actions, EV_ADD, 0, 0, NULL);
+        return kevent(this->kq, ev, 1, NULL, 0, NULL);
+    }
 
-        printf("kqueue 描述符: %d \n",kq);
-
-        struct kevent changes[1];
-        EV_SET(&changes[0], Acception::sd,EVFILT_READ,EV_ADD,0,0,NULL);
-
-        int ret;
-        ret = kevent(kq,changes,1,NULL,0,NULL);
-
-        printf("ret of kevent: %d \n",ret);
-
+private:
+    void waitEvent() {
+        struct kevent evs[MAX_KEVENT];
         while (1) {
-            struct kevent kev[MAX_KEVENT];
-            ret = kevent(kq,NULL,0,kev,MAX_KEVENT,NULL);
-            if (ret >0) {
-                for (int i = 0; i < ret; ++i) {
-                    if (kev[i].filter & EVFILT_READ) {
-                        if (kev[i].ident == Acception::sd) {
-                            int conn = accept(Acception::sd,NULL,NULL);
-                            struct kevent connChange[1];
-                            EV_SET(&connChange[0],conn,EVFILT_READ|EVFILT_WRITE,EV_ADD,0,0,NULL);
-                            kevent(kq,connChange,1,NULL,0,NULL);
-                        } else {
-                            printf("接受信息:!");
-                        }
-                    }
+            int nevs = kevent(this->kq, NULL, 0, evs, MAX_KEVENT, 0);
+            handleEvent(evs, nevs);
+        }
+    }
+
+    void handleEvent(struct kevent *evs, int nevs) {
+//        printf("handle events \n");
+        for (int i = 0; i < nevs; i++) {
+            if (evs[i].flags & EV_EOF) {
+                close(evs[i].ident);
+                continue;
+            }
+            if (evs[i].ident == Acception::sd) {
+                for (int j = 0; j < evs[i].data; j++) {
+                    int conn = accept(Acception::sd, NULL, NULL);
+                    this->addEvent(conn, EVFILT_READ);
+                    printf("注册新的 socket 描述符 : %d\n", conn);
                 }
+            } else if (evs[i].filter & EVFILT_READ) {
+                char *buff = (char *) malloc(sizeof(char) * evs[i].data);
+                bzero(buff, evs[i].data+1);
+                int ret = recv(evs[i].ident, buff, evs[i].data, 0);
+                printf("收到的信息: %s \n", buff);
+                free(buff);
             }
         }
-
-
     }
 };
 

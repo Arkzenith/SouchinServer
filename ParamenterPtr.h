@@ -9,9 +9,9 @@
 #include <unistd.h>
 
 struct ParamenterPtr {
+    struct sockaddr *addr=NULL;
     socklen_t *socklen=NULL;
     int *conn = NULL;
-    struct sockaddr *addr=NULL;
 };
 
 #endif //SOUCHINSERVER_PARAMENTERPTR_H
