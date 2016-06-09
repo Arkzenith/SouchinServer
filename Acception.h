@@ -97,6 +97,7 @@ public:
                 printf("EPOLL 发生错误[epoll_wait],程序退出 !socket descriptor %d \n", Acception::sd);
                 exit(EXIT_FAILURE);
             }
+            if (nfds ==0) continue;
             for (int i = 0; i < nfds; i++) {
                 if (events[i].data.fd == Acception::sd) {
                     while (1) {
