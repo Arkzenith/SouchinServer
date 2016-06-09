@@ -7,6 +7,7 @@
 
 #include <unistd.h>
 #include <thread>
+#include <sys/event.h>
 
 #ifdef __LINUX__
 
@@ -21,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#define MAX_KEVENT 32
 #endif
 
 #include "SCServer.h"
@@ -82,7 +84,7 @@ public:
 
 };
 
-#ifdef __UNIX__
+//#ifdef __UNIX__
 
 
 class KqueueAcception : public Acception {
@@ -90,10 +92,43 @@ class KqueueAcception : public Acception {
 public:
     virtual void doAccept() override {
         printf("启动 Kqueue 模式 \n");
+
+        int kq = kqueue();
+
+        printf("kqueue 描述符: %d \n",kq);
+
+        struct kevent changes[1];
+        EV_SET(&changes[0], Acception::sd,EVFILT_READ,EV_ADD,0,0,NULL);
+
+        int ret;
+        ret = kevent(kq,changes,1,NULL,0,NULL);
+
+        printf("ret of kevent: %d \n",ret);
+
+        while (1) {
+            struct kevent kev[MAX_KEVENT];
+            ret = kevent(kq,NULL,0,kev,MAX_KEVENT,NULL);
+            if (ret >0) {
+                for (int i = 0; i < ret; ++i) {
+                    if (kev[i].filter & EVFILT_READ) {
+                        if (kev[i].ident == Acception::sd) {
+                            int conn = accept(Acception::sd,NULL,NULL);
+                            struct kevent connChange[1];
+                            EV_SET(&connChange[0],conn,EVFILT_READ|EVFILT_WRITE,EV_ADD,0,0,NULL);
+                            kevent(kq,connChange,1,NULL,0,NULL);
+                        } else {
+                            printf("接受信息:!");
+                        }
+                    }
+                }
+            }
+        }
+
+
     }
 };
 
-#endif
+//#endif
 
 #ifdef __LINUX__
 
