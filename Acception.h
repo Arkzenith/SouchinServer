@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 #include <thread>
-#include <sys/event.h>
+//#include <sys/event.h>
 
 #ifdef __LINUX__
 
@@ -85,7 +85,7 @@ public:
 
 };
 
-//#ifdef __UNIX__
+#ifdef __UNIX__
 
 
 class KqueueAcception : public Acception {
@@ -149,7 +149,7 @@ private:
     }
 };
 
-//#endif
+#endif
 
 #ifdef __LINUX__
 
