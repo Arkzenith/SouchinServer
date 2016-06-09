@@ -17,6 +17,13 @@
 #define MAXEVENTS 1024
 #endif
 
+#ifdef __UNIX__
+#include <sys/event.h>
+#include <sys/types.h>
+#include <sys/time.h>
+
+#endif
+
 #include "SCServer.h"
 #include "Procession.h"
 #include "ParamenterPtr.h"
@@ -63,7 +70,7 @@ class ThreadAcception : public Acception {
 
 public:
     virtual void doAccept() override {
-        printf("使用多线程模式 \n");
+        printf("启动 多线程 模式 \n");
         while (1) {
             struct ParamenterPtr *paraPtr = (struct ParamenterPtr *) malloc(sizeof(struct ParamenterPtr));
             bzero(paraPtr, sizeof(struct ParamenterPtr));
@@ -76,13 +83,26 @@ public:
 
 };
 
+//#ifdef __UNIX__
+
+
+class KqueueAcception : public Acception {
+
+public:
+    virtual void doAccept() override {
+        printf("启动 Kqueue 模式 \n");
+    }
+};
+
+//#endif
+
 #ifdef __LINUX__
 
 class EpollAcception : public Acception {
 
 public:
     virtual void doAccept() override {
-        printf("使用epoll 模式 \n");
+        printf("启动 epoll 模式 \n");
         int efd = epoll_create1(0);
         struct epoll_event ev, events[MAXEVENTS];
         bzero(&ev, sizeof(struct epoll_event));

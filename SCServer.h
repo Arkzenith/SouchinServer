@@ -60,6 +60,9 @@ public:
 #ifdef __LINUX__
             printf("没有处理接入连接的策略,使用默认的<< Epoll >>策略 \n");
             acception = new EpollAcception();
+#elif __UNIX__
+            printf("没有处理接入连接的策略,使用默认的<< Kqueue >>策略 \n");
+            acception = new KqueueAcception();
 #else
             printf("没有处理接入连接的策略,使用默认的<< 多线程 >>策略 \n");
             acception = new ThreadAcception();
