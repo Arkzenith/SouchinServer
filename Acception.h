@@ -15,9 +15,8 @@
 #include <error.h>
 
 #define MAXEVENTS 1024
-#endif
 
-#ifdef __UNIX__
+#elif __UNIX__
 #include <sys/event.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -83,7 +82,7 @@ public:
 
 };
 
-//#ifdef __UNIX__
+#ifdef __UNIX__
 
 
 class KqueueAcception : public Acception {
@@ -94,7 +93,7 @@ public:
     }
 };
 
-//#endif
+#endif
 
 #ifdef __LINUX__
 
