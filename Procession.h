@@ -10,36 +10,30 @@
 #include <string.h>
 
 #include "Acception.h"
-#include "ParamenterPtr.h"
 
 class Procession {
-protected:
-    struct ParamenterPtr *paramenterPtr;
 
-public:
-    void setParamenterPtr(ParamenterPtr *paramenterPtr) {
-        Procession::paramenterPtr = paramenterPtr;
-    }
+protected:
+    int conn;
 
 protected:
     Procession() { }
 
 public:
-    Procession(ParamenterPtr *paramenterPtr) : paramenterPtr(paramenterPtr) { }
+    Procession(int conn) : conn(conn) { }
 
     virtual ~Procession() {
-        if (paramenterPtr) {
-            printf("销毁 Procession\n");
-            close(*(paramenterPtr->conn));
-            free(paramenterPtr->addr);
-            free(paramenterPtr->socklen);
-            free(paramenterPtr->conn);
-        }
+        close(this->conn);
     }
 
 public:
     static void Destory(Procession *procession) {
         delete procession;
+    }
+
+public:
+    void release() {
+        Procession::Destory(this);
     }
 
 public:
@@ -52,21 +46,21 @@ class MessageProcessioin : public Procession {
 
 
 public:
-    MessageProcessioin(ParamenterPtr *paramenterPtr) : Procession(paramenterPtr) { }
+    MessageProcessioin(int conn) : Procession(conn) { }
 
     MessageProcessioin() : Procession() { }
 
 public:
     virtual void doProcess() override {
-        int conn = *(paramenterPtr->conn);
+
         char buff[512];
         bzero(buff, 512);
-        recv(conn, buff, 512, 0);
+        recv(this->conn, buff, 512, 0);
         printf("接受到数据: %s \n", buff);
         char str[128];
         sprintf(str, "<<来自服务器测试用例[ 套接字描述符: %d ]的消息>>: 数据已收到! \n", conn);
-        send(conn, str, strlen(str), 0);
-        Procession::Destory(this);
+        send(this->conn, str, strlen(str), 0);
+        this->release();
     }
 };
 

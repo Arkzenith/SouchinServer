@@ -28,38 +28,23 @@
 
 #include "SCServer.h"
 #include "Procession.h"
-#include "ParamenterPtr.h"
 
 // 套接字 接受类接口
 class Acception {
 protected:
     int sd = 0;
-    Procession *procession = nullptr;
 
 public:
-    void setSd(int sd) {
+    virtual void setSd(int sd) {
         Acception::sd = sd;
     }
-
-    void setProcession(Procession *procession) {
-        Acception::procession = procession;
-    }
-
-    Acception(Procession *procession) : procession(procession) { }
 
     Acception() { }
 
 public:
-    void doProcess(struct ParamenterPtr *ptr) {
-//        注意此方法存在内存泄漏, 需要在使用完ptr后释放 , 内存不再泄漏16/6/4
-        if (procession == NULL) {
-            printf("没事设置连接处理器: Procession, 使用默认设置:MessageProcession\n");
-            procession = new MessageProcessioin(ptr);
-        }
-        printf("连接处理器得到套接字描述符: %d \n", *(ptr->conn));
+    void doProcess(int conn) {
+        Procession *procession = new MessageProcessioin(conn);
         procession->doProcess();
-//        必须重置指针!
-        procession = nullptr;
     }
 
 public:
@@ -74,38 +59,35 @@ public:
     virtual void doAccept() override {
         printf("启动 多线程 模式 \n");
         while (1) {
-            struct ParamenterPtr *paraPtr = (struct ParamenterPtr *) malloc(sizeof(struct ParamenterPtr));
-            bzero(paraPtr, sizeof(struct ParamenterPtr));
-            int conn = accept(Acception::sd, paraPtr->addr, paraPtr->socklen);
-            paraPtr->conn = (int *) malloc(sizeof(int));
-            *(paraPtr->conn) = conn;
-            std::thread(&Acception::doProcess, this, paraPtr).detach();
+            int conn = accept(Acception::sd, NULL, NULL);
+            std::thread(&Acception::doProcess, this, conn).detach();
         }
     }
-
 };
 
 #ifdef __UNIX__
 
-
 class KqueueAcception : public Acception {
-
 private:
     int kq;
 
 public:
+    virtual void setSd(int sd) override {
+        Acception::setSd(sd);
+        if (0 != this->addEvent(Acception::sd, EVFILT_READ)) {
+            printf("kevent error!\n ");
+        }
+    }
+
     KqueueAcception() : Acception() {
         printf("启动 Kqueue 模式 \n");
         this->kq = kqueue();
         printf("kqueue 描述符: %d \n", this->kq);
-
     }
 
 public:
     virtual void doAccept() override {
-        if (0 != this->addEvent(Acception::sd, EVFILT_READ)) {
-            printf("kevent error!\n ");
-        }
+
         waitEvent();
     }
 
@@ -126,7 +108,6 @@ private:
     }
 
     void handleEvent(struct kevent *evs, int nevs) {
-//        printf("handle events \n");
         for (int i = 0; i < nevs; i++) {
             if (evs[i].flags & EV_EOF) {
                 close(evs[i].ident);
@@ -135,15 +116,17 @@ private:
             if (evs[i].ident == Acception::sd) {
                 for (int j = 0; j < evs[i].data; j++) {
                     int conn = accept(Acception::sd, NULL, NULL);
-                    this->addEvent(conn, EVFILT_READ);
+                    this->addEvent(conn, EVFILT_READ | EVFILT_WRITE);
                     printf("注册新的 socket 描述符 : %d\n", conn);
                 }
-            } else if (evs[i].filter & EVFILT_READ) {
-                char *buff = (char *) malloc(sizeof(char) * evs[i].data);
-                bzero(buff, evs[i].data+1);
-                int ret = recv(evs[i].ident, buff, evs[i].data, 0);
-                printf("收到的信息: %s \n", buff);
-                free(buff);
+            } else {
+                if (evs[i].filter & EVFILT_READ) {
+                    char *buff = (char *) malloc(sizeof(char) * evs[i].data);
+                    bzero(buff, evs[i].data + 1);
+                    int ret = recv(evs[i].ident, buff, evs[i].data, 0);
+                    printf("收到的信息: %s \n", buff);
+                    free(buff);
+                }
             }
         }
     }

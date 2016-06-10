@@ -16,5 +16,5 @@ if (WIN32)
     add_definitions(-D__WIN32__)
 endif()
 
-set(SOURCE_FILES main.cpp SCServer.h Acception.h Procession.h ParamenterPtr.h)
+set(SOURCE_FILES main.cpp SCServer.h Acception.h Procession.h )
 add_executable(SouchinServer ${SOURCE_FILES})
