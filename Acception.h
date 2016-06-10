@@ -43,7 +43,13 @@ public:
 
 public:
     void doProcess(int conn) {
-        Procession *procession = new MessageProcessioin(conn);
+        Procession *procession = new MessageProcession(conn);
+        procession->doProcess();
+    }
+
+public:
+    void kqDoProcess(struct kevent *evs) {
+        Procession *procession = new kqueueProcession(evs);
         procession->doProcess();
     }
 
@@ -99,8 +105,8 @@ private:
 
 private:
     void waitEvent() {
-        struct kevent evs[MAX_KEVENT];
         while (1) {
+            struct kevent evs[MAX_KEVENT];
             int nevs = kevent(this->kq, NULL, 0, evs, MAX_KEVENT, 0);
             handleEvent(evs, nevs);
         }
@@ -119,16 +125,7 @@ private:
                     printf("注册新的 socket 描述符 : %d\n", conn);
                 }
             } else {
-                if (evs[i].filter & EVFILT_READ) {
-                    char *buff = (char *) malloc(sizeof(char) * evs[i].data);
-                    bzero(buff, evs[i].data + 1);
-                    int ret = recv(evs[i].ident, buff, evs[i].data, 0);
-                    printf("收到的信息: %s \n", buff);
-                    free(buff);
-                }
-//                线程 处理
-//                std::thread(&Acception::doProcess, this, evs[i].ident).detach();
-
+                std::thread(&Acception::kqDoProcess, this, &evs[i]).detach();
             }
         }
     }

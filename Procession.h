@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+//#include <sys/event.h>
 
 #include "Acception.h"
 
@@ -15,6 +16,8 @@ class Procession {
 
 protected:
     int conn;
+protected:
+    struct kevent *evs;
 
 protected:
     Procession() { }
@@ -22,8 +25,15 @@ protected:
 public:
     Procession(int conn) : conn(conn) { }
 
+    Procession(struct kevent *evs) : evs(evs) { }
+
     virtual ~Procession() {
-        close(this->conn);
+        if (conn > 0) {
+            close(this->conn);
+        }
+        if (evs) {
+            close(evs->ident);
+        }
     }
 
 public:
@@ -42,20 +52,20 @@ public:
 
 
 // 信息反射处理类  默认使用
-class MessageProcessioin : public Procession {
+class MessageProcession : public Procession {
 
 
 public:
-    MessageProcessioin(int conn) : Procession(conn) { }
+    MessageProcession(int conn) : Procession(conn) { }
 
-    MessageProcessioin() : Procession() { }
+    MessageProcession() : Procession() { }
 
 public:
     virtual void doProcess() override {
 
-        char buff[512];
-        bzero(buff, 512);
-        recv(this->conn, buff, 512, 0);
+        char buff[1024];
+        bzero(buff, 1024);
+        recv(this->conn, buff, 1024, 0);
         printf("接受到数据: %s \n", buff);
         char str[128];
         sprintf(str, "<<来自服务器测试用例[ 套接字描述符: %d ]的消息>>: 数据已收到! \n", conn);
@@ -64,5 +74,28 @@ public:
     }
 };
 
+class kqueueProcession : public Procession {
+
+public:
+    virtual void doProcess() override {
+        if (evs->filter & EVFILT_READ) {
+            char *buff = (char *) malloc(sizeof(char) * evs->data);
+            bzero(buff, evs->data + 1);
+            int ret = recv(evs->ident, buff, evs->data, 0);
+            printf("收到的信息: %s \n", buff);
+            char str[128];
+            sprintf(str, "<<来自服务器测试用例[ 套接字描述符: %d ]的消息>>: 数据已收到! \n", evs->ident);
+            send(this->evs->ident, str, strlen(str), 0);
+            free(buff);
+
+        }
+        this->release();
+    }
+
+    kqueueProcession(struct kevent *evs) : Procession(evs) { }
+
+public:
+    kqueueProcession() : Procession() { }
+};
 
 #endif //SOUCHINSERVER_PROCESSION_H
