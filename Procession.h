@@ -78,6 +78,7 @@ class kqueueProcession : public Procession {
 
 public:
     virtual void doProcess() override {
+
         if (evs->filter & EVFILT_READ) {
             char *buff = (char *) malloc(sizeof(char) * evs->data);
             bzero(buff, evs->data + 1);
@@ -87,7 +88,6 @@ public:
             sprintf(str, "<<来自服务器测试用例[ 套接字描述符: %d ]的消息>>: 数据已收到! \n", evs->ident);
             send(this->evs->ident, str, strlen(str), 0);
             free(buff);
-
         }
         this->release();
     }

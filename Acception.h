@@ -129,6 +129,13 @@ private:
             }
         }
     }
+
+public:
+    virtual ~KqueueAcception() {
+        if (kq >0) {
+            close(kq);
+        }
+    }
 };
 
 #endif
