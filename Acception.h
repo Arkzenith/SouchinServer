@@ -87,7 +87,6 @@ public:
 
 public:
     virtual void doAccept() override {
-
         waitEvent();
     }
 
@@ -127,6 +126,9 @@ private:
                     printf("收到的信息: %s \n", buff);
                     free(buff);
                 }
+//                线程 处理
+//                std::thread(&Acception::doProcess, this, evs[i].ident).detach();
+
             }
         }
     }
